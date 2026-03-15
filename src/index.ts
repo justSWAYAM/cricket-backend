@@ -29,22 +29,24 @@ const limiter = rateLimit({
 app.use("/api/", limiter);
 
 // 3. SECURE CORS
-// Added localhost:5173 and 127.0.0.1 just in case Vite or Docker uses them
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
-  "http://3.108.62.16:3000" // Update this later
+  "http://3.108.62.16:3000",
+  "http://cricket11.social",
+  "https://cricket11.social",
+  "http://www.cricket11.social",
+  "https://www.cricket11.social"
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl) in development
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log("Blocked Origin:", origin);
       callback(new Error('Blocked by Security (CORS)'));
     }
   },
@@ -53,14 +55,20 @@ app.use(cors({
 
 app.use(express.json({ limit: '10kb' }));
 
-// Routes
+// --- ROUTES ---
+
+// Public Routes
 app.use("/api/players", playersRouter);
-app.use("/api/feedback", feedbackRouter);
-app.use("/api/admin", adminAuth, adminRouter);
-app.use("/api/player-management", adminAuth, playerManagementRouter);
 app.use("/api/hints", hintsRouter);
 
-// Fix: Make sure these don't conflict with other /api routes
+// Admin Routes (Login is here, specific routes inside handle their own Bearer check)
+app.use("/api/admin", adminRouter); 
+
+// Protected Routes (Bouncer remains here for data management)
+app.use("/api/player-management", playerManagementRouter);
+app.use("/api/feedback", feedbackRouter);
+
+// Hard Mode Routes
 app.use("/api", hardCellsRouter);
 app.use("/api", hardGridRulesRouter);
 
